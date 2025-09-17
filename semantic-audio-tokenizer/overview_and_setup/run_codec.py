@@ -1,10 +1,13 @@
 import os
 import tempfile
+import argparse
+
 from pathlib import Path
 
 import ffmpeg
 import soundfile as sf
 from semanticodec import SemantiCodec
+from attention_token_allocation import ModifiedSemantiCodec
 
 
 ORIGINAL_DIR = Path("data/original")
@@ -15,8 +18,11 @@ TOKEN_RATE = 100
 VOCAB_SIZE = 16384
 
 
-def process_audio(input_path: Path, output_path: Path,
-                  token_rate: int = TOKEN_RATE, vocab_size: int = VOCAB_SIZE):
+def process_audio(input_path: Path,
+                  output_path: Path,
+                  token_rate: int = TOKEN_RATE,
+                  vocab_size: int = VOCAB_SIZE,
+                  model: SemantiCodec | ModifiedSemantiCodec):
     """
     Process audio with SemantiCodec
     """
@@ -37,7 +43,7 @@ def process_audio(input_path: Path, output_path: Path,
         )
 
         # 2) Run SemantiCodec (encode -> decode)
-        semanticodec = SemantiCodec(token_rate=token_rate, semantic_vocab_size=vocab_size)
+        semanticodec = model(token_rate=token_rate, semantic_vocab_size=vocab_size)
         tokens = semanticodec.encode(str(extracted_audio))
         waveform = semanticodec.decode(tokens)
         sf.write(str(processed_audio), waveform[0, 0], 16000)
@@ -54,8 +60,11 @@ def process_audio(input_path: Path, output_path: Path,
     print(f"Processed: {input_path.name} -> {output_path}")
 
 
-def process_video(input_path: Path, output_path: Path,
-                  token_rate: int = TOKEN_RATE, vocab_size: int = VOCAB_SIZE):
+def process_video(input_path: Path,
+                  output_path: Path,
+                  token_rate: int = TOKEN_RATE,
+                  vocab_size: int = VOCAB_SIZE,
+                  model: SemantiCodec | ModifiedSemantiCodec):
     """
     Extract audio from input_path, process with SemantiCodec, and mux back into the video.
     """
@@ -76,7 +85,7 @@ def process_video(input_path: Path, output_path: Path,
         )
 
         # 2) Run SemantiCodec (encode -> decode)
-        semanticodec = SemantiCodec(token_rate=token_rate, semantic_vocab_size=vocab_size)
+        semanticodec = model(token_rate=token_rate, semantic_vocab_size=vocab_size)
         tokens = semanticodec.encode(str(extracted_audio))
         waveform = semanticodec.decode(tokens)
         sf.write(str(processed_audio), waveform[0, 0], 16000)
@@ -104,7 +113,20 @@ def process_video(input_path: Path, output_path: Path,
     print(f"Processed: {input_path.name} -> {output_path}")
 
 
+def parse_args():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--semanticodec", type = str, default = "basic")
+
+    return ap.parse_args()
+
+
 def main():
+    args = parse_args()
+    model = SemantiCodec
+
+    if args.semanticodec == "modified":
+        model = ModifiedSemantiCodec
+
     if not ORIGINAL_DIR.exists():
         raise FileNotFoundError(f"Input folder not found: {ORIGINAL_DIR.resolve()}")
 
@@ -132,11 +154,11 @@ def main():
 
     for src in mp4s:
         dst = REPLACED_DIR / src.name
-        process_video(src, dst)
+        process_video(src, dst, model)
 
     for src in wavs:
         dst = REPLACED_DIR / src.name
-        process_audio(src, dst)
+        process_audio(src, dst, model)
 
 if __name__ == "__main__":
     main()
