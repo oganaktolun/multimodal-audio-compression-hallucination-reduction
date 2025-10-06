@@ -1,0 +1,16 @@
+torch
+torchaudio
+transformers
+bitsandbytes
+librosa
+soundfile
+git+https://github.com/hubertsiuzdak/snac.git
+encodec
+datasets
+accelerate
+matplotlib
+seaborn
+pandas
+tqdm
+yt-dlp
+ffmpeg-python

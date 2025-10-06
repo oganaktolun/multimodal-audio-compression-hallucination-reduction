@@ -1,0 +1,29 @@
+# Core DL stack
+torch>=2.1
+torchvision>=0.16
+torchaudio>=2.1
+
+# Utils
+numpy
+pillow
+tqdm
+pandas
+pyyaml
+
+# Video I/O (fast path optional)
+decord>=0.6.0
+opencv-python
+
+# Caption metrics
+nltk
+pycocotools
+git+https://github.com/salaniz/pycocoevalcap.git
+
+# OpenAI judge (GAVIE)
+openai>=1.13.3
+
+
+# (PandaGPT installed separately, from its public repo)
+
+# after installing nltk, if you plan to use METEOR, run once in python:
+# import nltk; nltk.download('wordnet'); nltk.download('omw-1.4')
